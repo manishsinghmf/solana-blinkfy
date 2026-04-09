@@ -49,6 +49,32 @@ export interface AppEnv {
   apiOrigin: string;
   webOrigin: string;
   solanaRpcUrl: string;
+  donationRecipient: string;
+  tipRecipient: string;
+  splitRecipientA: string;
+  splitRecipientB: string;
+  splitRecipientAPercentage: number;
+  splitRecipientBPercentage: number;
+}
+
+function ensureConfiguredAddress(value: string | undefined, label: string): string {
+  const trimmedValue = value?.trim();
+
+  if (!trimmedValue) {
+    throw new Error(`${label} must be configured.`);
+  }
+
+  return trimmedValue;
+}
+
+function parseSplitPercentage(value: string | undefined, label: string): number {
+  const parsedValue = Number(value);
+
+  if (!Number.isFinite(parsedValue) || parsedValue <= 0 || parsedValue >= 100) {
+    throw new Error(`${label} must be a number greater than 0 and less than 100.`);
+  }
+
+  return parsedValue;
 }
 
 export function getEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
@@ -63,5 +89,11 @@ export function getEnv(env: NodeJS.ProcessEnv = process.env): AppEnv {
     apiOrigin: ensureValidHttpUrl(env.API_ORIGIN ?? DEFAULT_API_ORIGIN, "API_ORIGIN"),
     webOrigin: ensureValidHttpUrl(env.WEB_ORIGIN ?? DEFAULT_WEB_ORIGIN, "WEB_ORIGIN"),
     solanaRpcUrl: ensureValidRpcUrl(env.SOLANA_RPC_URL ?? DEFAULT_SOLANA_RPC_URL),
+    donationRecipient: ensureConfiguredAddress(env.DONATION_RECIPIENT, "DONATION_RECIPIENT"),
+    tipRecipient: ensureConfiguredAddress(env.TIP_RECIPIENT, "TIP_RECIPIENT"),
+    splitRecipientA: ensureConfiguredAddress(env.SPLIT_RECIPIENT_A, "SPLIT_RECIPIENT_A"),
+    splitRecipientB: ensureConfiguredAddress(env.SPLIT_RECIPIENT_B, "SPLIT_RECIPIENT_B"),
+    splitRecipientAPercentage: parseSplitPercentage(env.SPLIT_RECIPIENT_A_PERCENTAGE ?? "70", "SPLIT_RECIPIENT_A_PERCENTAGE"),
+    splitRecipientBPercentage: parseSplitPercentage(env.SPLIT_RECIPIENT_B_PERCENTAGE ?? "30", "SPLIT_RECIPIENT_B_PERCENTAGE"),
   };
 }

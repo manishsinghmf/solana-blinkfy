@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import type { AppEnv } from "../src/config/env.js";
+import { createDonateHandlers } from "../src/routes/actions/donate.js";
 import { createSendSolHandlers, getSendSolMetadata } from "../src/routes/actions/send-sol.js";
+import { createSplitPaymentHandlers } from "../src/routes/actions/split-payment.js";
+import { createTipHandlers } from "../src/routes/actions/tip.js";
 import type { TransactionService } from "../src/services/solana/transactions.js";
 
 const VALID_ADDRESS = "11111111111111111111111111111111";
@@ -11,6 +14,12 @@ const env: AppEnv = {
   apiOrigin: "http://localhost:3001",
   webOrigin: "http://localhost:3000",
   solanaRpcUrl: "https://api.devnet.solana.com",
+  donationRecipient: VALID_ADDRESS,
+  tipRecipient: VALID_ADDRESS,
+  splitRecipientA: VALID_ADDRESS,
+  splitRecipientB: "FnHyam9w4NZoWR6mKN1CuGBritdsEWZQa4Z4oawLZGxa",
+  splitRecipientAPercentage: 70,
+  splitRecipientBPercentage: 30,
 };
 
 describe("send-sol action routes", () => {
@@ -120,6 +129,77 @@ describe("send-sol action routes", () => {
 
     expect(response.statusCode).toBe(400);
     expect(response.body.message).toContain("account is required");
+  });
+});
+
+describe("fixed provider action routes", () => {
+  it("returns donate metadata with preset links", () => {
+    const transactionService: TransactionService = {
+      buildTransferTransaction: vi.fn(),
+      buildMultiTransferTransaction: vi.fn(),
+    };
+    const handlers = createDonateHandlers(env, transactionService);
+    const response = createMockResponse();
+
+    handlers.get(
+      {
+        query: {
+          amount: "0.1",
+        },
+      } as never,
+      response as never,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.title).toBe("Donate SOL");
+    expect(response.body.links.actions[0].href).toContain("/api/actions/donate");
+  });
+
+  it("returns tip metadata with preset links", () => {
+    const transactionService: TransactionService = {
+      buildTransferTransaction: vi.fn(),
+      buildMultiTransferTransaction: vi.fn(),
+    };
+    const handlers = createTipHandlers(env, transactionService);
+    const response = createMockResponse();
+
+    handlers.get(
+      {
+        query: {
+          amount: "0.05",
+        },
+      } as never,
+      response as never,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.title).toBe("Tip SOL");
+    expect(response.body.links.actions[0].href).toContain("/api/actions/tip");
+  });
+
+  it("builds a split-payment transaction response", async () => {
+    const transactionService: TransactionService = {
+      buildTransferTransaction: vi.fn(),
+      buildMultiTransferTransaction: vi.fn().mockResolvedValue("split-base64"),
+    };
+    const handlers = createSplitPaymentHandlers(env, transactionService);
+    const response = createMockResponse();
+
+    await handlers.post(
+      {
+        query: {
+          amount: "0.5",
+        },
+        body: {
+          account: VALID_ADDRESS,
+        },
+      } as never,
+      response as never,
+    );
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body.transaction).toBe("split-base64");
+    expect(response.body.message).toContain("split payment");
   });
 });
 

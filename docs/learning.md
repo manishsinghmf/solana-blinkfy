@@ -17,6 +17,7 @@
 - Official Solana Actions/Blinks docs indicate Blink clients can use an interstitial pattern:
   - `?action=<action_url>`
 - This means Blinkfy can behave as its own Blink-aware client by decoding the query param, fetching the Action, rendering it, and executing it.
+- This also clarified that raw `solana-action:` links on normal pages are not the product's primary execution path.
 
 ## Reference Repo Learnings
 - `getblink.fun`
@@ -49,3 +50,10 @@
 - Blinkfy is now evolving into:
   - an Action provider
   - a Blink-aware web client
+- The client layer is intended to support any valid Solana Action, while `send-sol` remains the first fully validated provider flow.
+- Future actions such as `donate` should fit the same Action-provider pattern rather than introduce a separate client model.
+
+## Provider Expansion Learnings
+- The existing `send-sol` route structure is reusable for other transfer-style Actions.
+- Fixed provider actions can be added with env-backed recipients and preset amounts without changing the generic Blink client.
+- Multi-recipient transfer Actions such as `split-payment` require backend support for multiple transfer instructions in one transaction, but still fit the same Action lifecycle.

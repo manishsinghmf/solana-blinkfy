@@ -21,6 +21,7 @@ Why:
 - wallet adapter handles Phantom and Solflare connection
 - `@solana/web3.js` is used in the browser to deserialize, sign, and submit returned transactions
 - the frontend now acts as a Blink-aware client and interstitial renderer
+- the frontend is intended to consume any valid Solana Action that matches the supported GET/POST lifecycle
 
 ## Backend
 - Express 5
@@ -38,6 +39,7 @@ Why:
   - transaction message construction
   - transaction serialization
 - `@solana-program/system` provides the transfer instruction builder
+- the backend now supports both single-recipient and multi-recipient transfer-style Actions
 
 ## Solana Library Usage
 - Backend:
@@ -50,6 +52,12 @@ Why:
 Important:
 - `@solana/web3.js` is **not** currently used by the backend
 - `@solana/kit` is **not** currently used by the frontend
+- `send-sol` is the first validated provider flow, while future actions such as `donate` would extend the same provider/client architecture
+- current provider action set:
+  - `send-sol`
+  - `donate`
+  - `tip`
+  - `split-payment`
 
 ## Runtime Topology
 - Web app deployed on Vercel:

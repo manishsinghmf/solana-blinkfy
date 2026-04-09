@@ -3,6 +3,15 @@ export interface BlinkFormValues {
   amountSol: string;
 }
 
+export interface ProviderActionPreset {
+  key: string;
+  title: string;
+  description: string;
+  actionPath: string;
+  amountSol: string;
+  actionLabel: string;
+}
+
 export interface ActionParameter {
   name: string;
   label: string;
@@ -61,6 +70,13 @@ export function buildActionUrl(apiUrl: string, values: BlinkFormValues): string 
 
   actionUrl.searchParams.set("to", values.recipientAddress.trim());
   actionUrl.searchParams.set("amount", normalizeAmountInput(values.amountSol));
+
+  return actionUrl.toString();
+}
+
+export function buildPresetActionUrl(apiUrl: string, preset: ProviderActionPreset): string {
+  const actionUrl = new URL(preset.actionPath, apiUrl);
+  actionUrl.searchParams.set("amount", normalizeAmountInput(preset.amountSol));
 
   return actionUrl.toString();
 }

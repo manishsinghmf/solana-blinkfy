@@ -6,6 +6,10 @@ Blinkfy is a Solana Blink Proof of Concept with two roles:
 - a **Blink-aware client** frontend that can render and execute Solana Actions through a Blinkfy interstitial
 
 The first validated provider flow is `send-sol`, but the frontend client should be able to consume any Action URL that conforms to the Solana Actions response shape.
+Blinkfy currently also exposes additional fixed transfer-style provider actions:
+- `donate`
+- `tip`
+- `split-payment`
 
 ## Deployment Topology
 - Web: `https://blinkfy-web.vercel.app`
@@ -23,6 +27,15 @@ The first validated provider flow is `send-sol`, but the frontend client should 
   - raw `solana-action:` URI
   - Blinkfy interstitial URL in the form:
     - `https://blinkfy-web.vercel.app/?action=<encoded-solana-action-uri>`
+- Preferred execution path:
+  - Blinkfy interstitial URL
+- Non-primary/debug outputs:
+  - raw Action URL
+  - raw `solana-action:` URI
+- The homepage may also expose fixed provider presets for:
+  - `donate`
+  - `tip`
+  - `split-payment`
 
 ### Blinkfy Interstitial Mode
 - Route: `/?action=<encoded-solana-action-uri>`
@@ -38,11 +51,22 @@ The first validated provider flow is `send-sol`, but the frontend client should 
   - use the connected wallet account in the POST body
   - prompt the wallet to sign and submit the returned transaction
 
+### Blink Client Lifecycle
+1. Parse the `action` query parameter.
+2. Validate the `solana-action:` scheme.
+3. Decode the embedded Action URL.
+4. Require the Action URL to be absolute HTTPS.
+5. Fetch Action metadata via `GET`.
+6. Render `links.actions` and any parameters.
+7. Execute the selected linked action via `POST`.
+8. Submit the returned transaction through the connected wallet.
+
 ### Generic Action Support
 - The client should render any valid Action that exposes:
   - metadata from `GET`
   - linked actions in `links.actions`
   - transaction responses from `POST`
+- The client is generic at the rendering/execution layer, but only `send-sol` is currently validated end-to-end in Blinkfy.
 - For malformed or unsupported Actions:
   - show explicit error states
   - keep the decoded Action URL visible for fallback testing in inspector or Dial.to
@@ -82,6 +106,24 @@ The first validated provider flow is `send-sol`, but the frontend client should 
   - `transaction` as base64 serialized bytes
   - `message`
 
+### GET/POST `/api/actions/donate`
+- Fixed donation recipient from `DONATION_RECIPIENT`
+- Preset amounts exposed through `links.actions`
+- POST returns a single-recipient SOL transfer transaction
+
+### GET/POST `/api/actions/tip`
+- Fixed tip recipient from `TIP_RECIPIENT`
+- Preset amounts exposed through `links.actions`
+- POST returns a single-recipient SOL transfer transaction
+
+### GET/POST `/api/actions/split-payment`
+- Fixed recipients from:
+  - `SPLIT_RECIPIENT_A`
+  - `SPLIT_RECIPIENT_B`
+- Fixed split percentages from env
+- Preset total amounts exposed through `links.actions`
+- POST returns a transaction with two transfer instructions
+
 ## Transaction Rules
 - Instruction: system program SOL transfer
 - Amount conversion: deterministic SOL-to-lamports parsing
@@ -90,6 +132,7 @@ The first validated provider flow is `send-sol`, but the frontend client should 
 - Source account: requesting wallet account
 - Recent blockhash: fetched from devnet at request time
 - Backend returns unsigned transactions only
+- `split-payment` may return multiple transfer instructions in one unsigned transaction
 
 ## Error Handling
 - Invalid address: `400`
@@ -102,9 +145,11 @@ The first validated provider flow is `send-sol`, but the frontend client should 
 ## Non-Functional Expectations
 - Keep the architecture small and readable.
 - Use strict TypeScript types.
+- Document the distinction between provider behavior and client behavior clearly.
 - Separate:
   - provider backend logic
   - interstitial/client rendering logic
   - wallet connection logic
   - transaction signing/submission logic
 - Do not add auth or persistence for this PoC.
+- A raw `solana-action:` link from a normal page is not the primary execution path.

@@ -14,15 +14,43 @@ import {
   buildActionUrl,
   buildBlinkHrefFromActionUrl,
   buildInterstitialHref,
+  buildPresetActionUrl,
   isSecureActionUrl,
   normalizeAmountInput,
   parseBlinkActionParam,
+  type ProviderActionPreset,
   resolveLinkedActionHref,
 } from "../lib/blink";
 import { getPublicApiUrl } from "../lib/config";
 
 const API_URL = getPublicApiUrl();
 const IS_SECURE_ACTION_URL = isSecureActionUrl(API_URL);
+const FIXED_PROVIDER_PRESETS: ProviderActionPreset[] = [
+  {
+    key: "donate-0-1",
+    title: "Donate 0.1 SOL",
+    description: "Support the Blinkfy creator with a fixed donation flow.",
+    actionPath: "/api/actions/donate",
+    amountSol: "0.1",
+    actionLabel: "Donate",
+  },
+  {
+    key: "tip-0-05",
+    title: "Tip 0.05 SOL",
+    description: "Send a small fixed tip with one click.",
+    actionPath: "/api/actions/tip",
+    amountSol: "0.05",
+    actionLabel: "Tip",
+  },
+  {
+    key: "split-0-5",
+    title: "Split Payment 0.5 SOL",
+    description: "Demonstrate a two-recipient fixed split payment.",
+    actionPath: "/api/actions/split-payment",
+    amountSol: "0.5",
+    actionLabel: "Pay",
+  },
+];
 
 if (typeof window !== "undefined") {
   window.Buffer = window.Buffer ?? Buffer;
@@ -55,6 +83,7 @@ function GeneratorSection() {
   const [recipientAddress, setRecipientAddress] = useState("");
   const [amountSol, setAmountSol] = useState("");
   const [generatedLinks, setGeneratedLinks] = useState<{
+    title: string;
     actionUrl: string;
     blinkUrl: string;
     interstitialUrl: string;
@@ -72,6 +101,20 @@ function GeneratorSection() {
 
     setAmountSol(normalizedAmount);
     setGeneratedLinks({
+      title: `Send ${normalizedAmount} SOL`,
+      actionUrl,
+      blinkUrl,
+      interstitialUrl: buildInterstitialHref(webOrigin, blinkUrl),
+    });
+  }
+
+  function handlePresetClick(preset: ProviderActionPreset) {
+    const actionUrl = buildPresetActionUrl(API_URL, preset);
+    const blinkUrl = buildBlinkHrefFromActionUrl(actionUrl);
+    const webOrigin = window.location.origin;
+
+    setGeneratedLinks({
+      title: preset.title,
       actionUrl,
       blinkUrl,
       interstitialUrl: buildInterstitialHref(webOrigin, blinkUrl),
@@ -122,6 +165,7 @@ function GeneratorSection() {
       <InfoCard title="Generated Output">
         {generatedLinks ? (
           <div style={stackStyle}>
+            <p style={{ margin: 0, fontWeight: 700 }}>{generatedLinks.title}</p>
             <LinkRow
               label="Blinkfy interstitial URL"
               href={generatedLinks.interstitialUrl}
@@ -144,6 +188,22 @@ function GeneratorSection() {
         ) : (
           <p style={mutedTextStyle}>Submit the form to generate the interstitial and Action URLs.</p>
         )}
+      </InfoCard>
+
+      <InfoCard title="Fixed Provider Action Presets">
+        <div style={presetGridStyle}>
+          {FIXED_PROVIDER_PRESETS.map((preset) => (
+            <div key={preset.key} style={presetCardStyle}>
+              <div style={{ display: "grid", gap: "8px" }}>
+                <p style={{ margin: 0, fontWeight: 700 }}>{preset.title}</p>
+                <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6 }}>{preset.description}</p>
+              </div>
+              <button type="button" style={primaryButtonStyle} onClick={() => handlePresetClick(preset)}>
+                Generate {preset.actionLabel} Blink
+              </button>
+            </div>
+          ))}
+        </div>
       </InfoCard>
 
       {!IS_SECURE_ACTION_URL ? (
@@ -185,13 +245,12 @@ function BlinkClientSection({ actionParam }: Readonly<{ actionParam: string }>) 
         setBlinkHref(parsed.blinkHref);
         setParseError(null);
 
-        const response = await fetch(parsed.actionUrl, {
+        const { response, payload } = await fetchActionJson<ActionGetResponse>(parsed.actionUrl, {
           method: "GET",
           headers: {
             Accept: "application/json",
           },
         });
-        const payload = (await response.json()) as ActionGetResponse;
 
         if (!response.ok) {
           throw new Error(payload.error?.message ?? "Failed to fetch action metadata.");
@@ -226,7 +285,7 @@ function BlinkClientSection({ actionParam }: Readonly<{ actionParam: string }>) 
 
     try {
       const resolvedHref = resolveLinkedActionHref(actionUrl, action.href, values);
-      const response = await fetch(resolvedHref, {
+      const { response, payload } = await fetchActionJson<ActionPostResponse>(resolvedHref, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -235,7 +294,6 @@ function BlinkClientSection({ actionParam }: Readonly<{ actionParam: string }>) 
           account: publicKey.toBase58(),
         }),
       });
-      const payload = (await response.json()) as ActionPostResponse;
 
       if (!response.ok) {
         throw new Error(payload.error?.message ?? payload.message ?? "Action execution failed.");
@@ -399,6 +457,32 @@ function deserializeTransaction(transactionBase64: string) {
     return VersionedTransaction.deserialize(transactionBuffer);
   } catch {
     return Transaction.from(transactionBuffer);
+  }
+}
+
+async function fetchActionJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<{
+  response: Response;
+  payload: T;
+}> {
+  const response = await fetch(input, init);
+  const rawBody = await response.text();
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (!contentType.includes("application/json")) {
+    const preview = rawBody.slice(0, 160).trim();
+    throw new Error(
+      `Expected JSON from the Action endpoint, but received ${contentType || "non-JSON content"} instead. ` +
+        `This usually means the route is not deployed or returned an HTML error page. Preview: ${preview}`,
+    );
+  }
+
+  try {
+    return {
+      response,
+      payload: JSON.parse(rawBody) as T,
+    };
+  } catch {
+    throw new Error("The Action endpoint returned invalid JSON.");
   }
 }
 
@@ -610,4 +694,18 @@ const inputStyles: React.CSSProperties = {
 const secondaryLinkStyle: React.CSSProperties = {
   color: "var(--accent-strong)",
   fontWeight: 700,
+};
+
+const presetGridStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "16px",
+};
+
+const presetCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "14px",
+  padding: "16px",
+  borderRadius: "18px",
+  background: "rgba(255, 255, 255, 0.78)",
+  border: "1px solid var(--border)",
 };
