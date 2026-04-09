@@ -1,56 +1,49 @@
 # Implementation Plan
 
 ## Milestones
-1. Scaffold a split monorepo with `apps/web` and `apps/api`.
-2. Add shared TypeScript config and workspace scripts.
-3. Implement API validation and Action route handlers.
-4. Implement Solana devnet transaction construction.
-5. Add the minimal Next.js Blink generator page.
-6. Add tests for validators and API behavior.
-7. Document setup, architecture, and usage in `/docs`.
+1. Keep the existing provider backend for `send-sol`.
+2. Upgrade the web app into a dual-mode Blink-aware client.
+3. Add wallet connection for in-page Action execution.
+4. Support generic Action metadata rendering with `send-sol` as the first validated provider flow.
+5. Refresh documentation around deployment, testing, requirements, and learnings.
 
 ## Execution Steps
-### 1. Workspace setup
-- Use a workspace package manager for shared install and scripts.
-- Keep the root small: package manager config, TypeScript base config, and root scripts only.
+### 1. Frontend mode split
+- Keep `/` as the entrypoint.
+- Use generator mode when no `action` query param is present.
+- Use interstitial/client mode when `action` is present.
 
-### 2. API implementation
-- Create an Express app with JSON parsing and CORS support.
-- Add:
-  - environment config
-  - request validators
-  - Action response types
-  - transaction service
-  - send-sol route handlers
-- Support:
-  - `OPTIONS /api/actions/send-sol`
-  - `GET /api/actions/send-sol`
-  - `POST /api/actions/send-sol`
+### 2. Generator experience
+- Keep the existing `send-sol` form.
+- Generate:
+  - raw Action URL
+  - raw `solana-action:` URI
+  - Blinkfy interstitial URL
+- Make the interstitial URL the primary launch path.
 
-### 3. Solana integration
-- Use Solana Kit for:
-  - address parsing
-  - devnet RPC client
-  - transaction message creation
-  - unsigned transaction serialization
-- Use `@solana-program/system` to build the SOL transfer instruction.
-- Use a noop signer for the user account when constructing the unsigned message.
+### 3. Blink-aware client
+- Decode `?action=...`
+- Validate `solana-action:` prefix
+- Decode and validate HTTPS Action URL
+- Fetch Action metadata from `GET`
+- Render linked actions and parameter inputs generically from `links.actions`
+- Execute linked actions through `POST`
 
-### 4. Frontend implementation
-- Create a single page with two inputs and one submit button.
-- Generate the Blink link from the configured API origin.
-- Display the generated `solana-action:` URI directly.
-- Expose an `actions.json` route for wallet/client discovery.
+### 4. Wallet execution
+- Add wallet adapter support for Phantom and Solflare
+- Connect wallet only when client mode needs execution
+- Use returned transaction payloads to trigger signing/submission in-page
 
-### 5. Verification
-- Add API tests for valid and invalid request paths.
-- Add validator tests for address and lamport conversion logic.
-- Verify builds for both apps.
-- Verify the API can fetch a devnet blockhash during runtime.
+### 5. Documentation
+- Update the existing docs so they match the actual deployment:
+  - web on Vercel
+  - API on Railway
+- Add `requirements.md` for evolving requirements
+- Add `learning.md` for project history and discoveries
 
 ## Acceptance Criteria
-- A user can generate a Blink from the UI.
-- `GET /api/actions/send-sol` returns valid metadata for valid input.
-- `POST /api/actions/send-sol` returns a base64 unsigned transaction for valid input.
-- Invalid input produces clear `400` responses.
-- All planned docs exist and describe the implemented system.
+- A user can still generate a `send-sol` Action from the homepage.
+- A user can open a Blinkfy interstitial URL and see the rendered Action UI.
+- The client can execute the first validated provider flow (`send-sol`) with a connected wallet.
+- Invalid or unsupported Action inputs show visible, actionable errors.
+- All docs reflect the real URLs, product behavior, and current tech stack.

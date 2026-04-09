@@ -9,9 +9,10 @@ Create a root `.env` file:
 
 ```dotenv
 PORT=3001
-API_ORIGIN=https://blinkfy-api.vercel.app
+API_ORIGIN=https://blinkfy-api.up.railway.app
 WEB_ORIGIN=https://blinkfy-web.vercel.app
-NEXT_PUBLIC_API_URL=https://blinkfy-api.vercel.app
+NEXT_PUBLIC_API_URL=https://blinkfy-api.up.railway.app
+NEXT_PUBLIC_SOLANA_RPC_URL=https://api.devnet.solana.com
 SOLANA_RPC_URL=https://api.devnet.solana.com
 ```
 
@@ -19,42 +20,19 @@ Values:
 - `PORT`
   - API server port
 - `API_ORIGIN`
-  - public HTTPS origin for the Actions API
+  - public HTTPS origin for the Railway Actions API
 - `WEB_ORIGIN`
-  - public HTTPS origin for the web app and icon host
+  - public HTTPS origin for the Vercel web app and icon host
 - `NEXT_PUBLIC_API_URL`
-  - API origin used by the frontend Blink URL builder
+  - API origin used by the frontend Action generator and interstitial client
+- `NEXT_PUBLIC_SOLANA_RPC_URL`
+  - RPC endpoint used by the browser wallet client
 - `SOLANA_RPC_URL`
-  - Solana devnet RPC endpoint
+  - RPC endpoint used by the backend Action provider
 
-Important:
-- `blinkfy-api.vercel.app` and `blinkfy-web.vercel.app` are placeholder examples. Replace them with your actual Vercel deployment URLs after deploy.
-- For wallet testing, these values must point to real reachable HTTPS endpoints, such as a deployed app or a public tunnel.
-
-## Vercel Deployment
-This repo is easiest to deploy as two separate Vercel projects from the same monorepo:
-
-1. Push the repo to GitHub.
-2. In Vercel, import the repo twice.
-3. Create the web project with root directory `apps/web`.
-4. Create the API project with root directory `apps/api`.
-5. Deploy both projects once to get real `*.vercel.app` URLs.
-6. Set API project env vars:
-   - `PORT=3001`
-   - `API_ORIGIN=https://<your-api-project>.vercel.app`
-   - `WEB_ORIGIN=https://<your-web-project>.vercel.app`
-   - `SOLANA_RPC_URL=https://api.devnet.solana.com`
-7. Set web project env vars:
-   - `NEXT_PUBLIC_API_URL=https://<your-api-project>.vercel.app`
-8. Redeploy both projects after setting env vars.
-
-After deploy, test these URLs directly in the browser:
-- `https://<your-api-project>.vercel.app/api/actions/send-sol?to=<wallet>&amount=0.01`
-- `https://<your-web-project>.vercel.app/actions.json`
-
-Then test the action in a Blink-aware client such as:
-- `https://www.blinks.xyz/inspector?url=<encoded-action-url>`
-- `https://dial.to/developer?cluster=devnet`
+## Current Deployment
+- Web: `https://blinkfy-web.vercel.app`
+- API: `https://blinkfy-api.up.railway.app`
 
 ## Install
 ```bash
@@ -93,15 +71,41 @@ Build both apps:
 pnpm build
 ```
 
-## Manual Verification Flow
-1. Open `http://localhost:3000`.
-2. Enter a devnet recipient address and amount.
-3. Generate the Blink URL.
-4. Inspect the generated link to confirm it points at `/api/actions/send-sol`.
-5. Open the link in a compatible Solana Action client or wallet.
-6. Confirm the wallet requests a signature for a devnet SOL transfer.
+## Manual Verification
+### Provider checks
+1. Open:
+   - `https://blinkfy-api.up.railway.app/api/actions/send-sol?to=<wallet>&amount=0.01`
+2. Confirm the response returns valid Action JSON.
+3. Open:
+   - `https://blinkfy-web.vercel.app/actions.json`
+4. Confirm the actions mapping is reachable.
+
+### Generator checks
+1. Open `https://blinkfy-web.vercel.app`
+2. Enter a recipient address and amount.
+3. Confirm the page generates:
+   - raw Action URL
+   - raw `solana-action:` URI
+   - Blinkfy interstitial URL
+
+### Blinkfy interstitial checks
+1. Open the generated Blinkfy interstitial URL:
+   - `https://blinkfy-web.vercel.app/?action=<encoded-solana-action-uri>`
+2. Confirm Blinkfy renders:
+   - Action metadata
+   - linked actions
+   - parameter inputs when required
+3. Connect Phantom or Solflare.
+4. Execute the action and confirm the wallet popup appears.
+
+### Inspector fallback checks
+Use a Blink-aware testing surface if needed:
+- `https://dial.to/developer?cluster=devnet`
+- `https://www.blinks.xyz/inspector?url=<encoded-action-url>`
 
 ## Notes
-- The backend returns unsigned transactions only.
-- The wallet/client is expected to finalize fee payer behavior and submit the transaction.
-- `actions.json` is exposed from the web app for Action discovery support.
+- Blinkfy is now both:
+  - an Action provider backend
+  - a Blink-aware web client/interstitial
+- A raw `solana-action:` link on a normal website should not be assumed to open a wallet directly.
+- The supported in-app execution path is the Blinkfy interstitial URL with wallet connection.

@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
+import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
+
+import { AppWalletProvider } from "../components/wallet-provider";
+import { getPublicRpcUrl } from "../lib/config";
 
 export const metadata: Metadata = {
   title: "Blinkfy",
-  description: "Minimal Solana Blink generator for devnet SOL transfers.",
+  description: "Blink generator and Blink-aware client for Solana Actions.",
 };
 
 export default function RootLayout({
@@ -13,7 +17,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppWalletProvider endpoint={getPublicRpcUrl()}>{children}</AppWalletProvider>
+      </body>
     </html>
   );
 }
