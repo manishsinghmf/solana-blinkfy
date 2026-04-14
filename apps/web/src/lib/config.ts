@@ -17,3 +17,8 @@ export function getPublicRpcUrl(): string {
 export function getPublicWebUrl(): string {
   return ensureAbsoluteUrl(process.env.WEB_ORIGIN ?? process.env.NEXT_PUBLIC_WEB_ORIGIN ?? DEFAULT_WEB_URL);
 }
+
+export function getPublicXHandle(): string | undefined {
+  const value = process.env.NEXT_PUBLIC_X_HANDLE?.trim();
+  return value ? (value.startsWith("@") ? value : `@${value}`) : undefined;
+}

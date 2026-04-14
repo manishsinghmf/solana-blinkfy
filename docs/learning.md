@@ -308,6 +308,55 @@ When a platform-specific behavior is partly outside our control, we should quick
 ### Reusable rule
 For share pages, implement route-level metadata and a dedicated social image instead of relying on generic site-wide metadata alone.
 
+## Session: Strengthening X unfurl metadata and making the client feel like X
+Date: 2026-04-14
+
+### What you asked
+After trying the share link, you reported that X was still showing the URL as a simple link instead of an unfurl card.
+You also asked for the Blinkfy client UI to look more similar to X so it can better demonstrate how a Blink action would feel in a social client.
+
+### What I understood
+I understood that we needed to improve two different experiences at once:
+- the metadata surface that X reads for previews
+- the in-product action presentation so the Blink client feels closer to the mental model users already have from X
+
+### What I did
+I strengthened the `/donate` route metadata by adding:
+- explicit absolute canonical and image URLs
+- robots metadata
+- a dedicated `twitter-image` route in addition to the existing Open Graph image
+- optional support for an X handle via environment configuration
+
+I also redesigned the Blink client action view to use a more X-like layout with:
+- a tweet-style frame
+- profile-style header treatment
+- an embedded action card presentation
+- more social-client-like typography and action buttons
+
+### What problem or mismatch we hit
+The initial implementation was valid as a generic social page, but it was still possible for X preview behavior to remain weak because social platforms are sensitive to exact metadata shape, absolute image URLs, caching, and deployment state.
+Separately, the previous Blink client UI worked functionally but did not communicate the social-embed idea strongly enough.
+
+### How we discussed and corrected it
+You reported the real observed behavior directly instead of assuming the first version was good enough.
+That let us move from "we added metadata" to "we need stronger metadata and a better presentation model."
+
+### Your input quality
+Your feedback was effective because it was outcome-based and specific: the preview was still showing as a simple link, and the client did not yet feel like the intended X-style demo surface.
+
+### My response quality
+My response improved here because I treated the first version as an iteration, not the final answer.
+I also validated the revised implementation with a production build after the changes.
+
+### Outcome
+Blinkfy now has stronger X-targeted metadata on `/donate`, a dedicated Twitter image route, and a more X-like Blink client interface for Action rendering and execution.
+
+### What we should do differently next time
+For platform preview features, we should assume one implementation pass may not be enough and validate both metadata structure and real rendered behavior after deployment.
+
+### Reusable rule
+If the desired UX is "this should feel like a social embed," both metadata and in-product presentation need to reflect that goal explicitly.
+
 ## Cross-Session Learnings
 - A raw protocol URI is not the same thing as a working user flow.
 - Specialized protocols must be discussed together with the client surfaces that understand them.

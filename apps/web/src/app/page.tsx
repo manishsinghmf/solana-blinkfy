@@ -69,7 +69,7 @@ function HomePageContent() {
   const actionParam = searchParams.get("action");
 
   return (
-    <PageShell>
+    <PageShell wide={Boolean(actionParam)}>
       {actionParam ? (
         <BlinkClientSection actionParam={actionParam} />
       ) : (
@@ -319,54 +319,52 @@ function BlinkClientSection({ actionParam }: Readonly<{ actionParam: string }>) 
 
   return (
     <>
-      <Header
-        eyebrow="Blinkfy Client"
-        title="Render and execute a Solana Action in Blinkfy"
-        description="Blinkfy is acting as a Blink-aware client. It decodes the action URL, fetches metadata, renders linked actions, and uses your connected wallet to sign the returned transaction."
-      />
-
-      <InfoCard title="Action Context">
-        <div style={stackStyle}>
-          <LinkRow label="Decoded Action URL" href={actionUrl || undefined} value={actionUrl || "Unavailable"} />
-          <LinkRow label="Raw solana-action URI" value={blinkHref || actionParam} />
-          <div style={{ display: "flex", justifyContent: "flex-start" }}>
-            <WalletMultiButton />
-          </div>
-        </div>
-      </InfoCard>
-
-      {loading ? <InfoCard title="Status"><p style={mutedTextStyle}>Loading Action metadata...</p></InfoCard> : null}
-
-      {parseError && !loading ? (
-        <Notice variant="error">
-          <strong>Unable to render this Blink.</strong> {parseError}
-        </Notice>
-      ) : null}
-
-      {metadata && !loading ? (
-        <>
-          <InfoCard title={metadata.title}>
-            <div style={{ display: "grid", gap: "14px" }}>
-              <img
-                src={metadata.icon}
-                alt={metadata.title}
-                style={{
-                  width: "72px",
-                  height: "72px",
-                  borderRadius: "18px",
-                  objectFit: "cover",
-                  border: "1px solid var(--border)",
-                }}
-              />
-              <p style={{ margin: 0, color: "var(--muted)", lineHeight: 1.6 }}>{metadata.description}</p>
-              <p style={{ margin: 0, fontWeight: 700 }}>Primary label: {metadata.label}</p>
-              {metadata.error?.message ? (
-                <Notice variant="error">{metadata.error.message}</Notice>
-              ) : null}
+      <div style={tweetShellStyle}>
+        <div style={tweetFrameStyle}>
+          <div style={tweetHeaderRowStyle}>
+            <div style={tweetAvatarStyle}>B</div>
+            <div style={{ display: "grid", gap: "4px" }}>
+              <div style={tweetIdentityRowStyle}>
+                <span style={tweetDisplayNameStyle}>Blinkfy</span>
+                <span style={tweetHandleStyle}>@blinkfy_web</span>
+              </div>
+              <p style={tweetMetaStyle}>Blink-aware client preview</p>
             </div>
-          </InfoCard>
+            <div style={{ marginLeft: "auto" }}>
+              <WalletMultiButton />
+            </div>
+          </div>
 
-          <InfoCard title="Available Actions">
+          <p style={tweetBodyStyle}>
+            Blinkfy is rendering this Solana Action the way an X-style client would present it: show the context,
+            reveal the embedded action card, and let the wallet execute from the same surface.
+          </p>
+
+          <div style={tweetCardStyle}>
+            <div style={tweetCardHeaderStyle}>
+              {metadata?.icon ? (
+                <img
+                  src={metadata.icon}
+                  alt={metadata.title || "Action icon"}
+                  style={tweetCardIconStyle}
+                />
+              ) : (
+                <div style={tweetCardIconFallbackStyle}>A</div>
+              )}
+              <div style={{ display: "grid", gap: "6px" }}>
+                <p style={tweetCardEyebrowStyle}>Solana Action</p>
+                <p style={tweetCardTitleStyle}>{metadata?.title ?? "Loading action..."}</p>
+              </div>
+            </div>
+
+            <p style={tweetCardDescriptionStyle}>
+              {loading
+                ? "Blinkfy is loading the Action metadata now."
+                : metadata?.description ?? "Unable to load a description for this Action."}
+            </p>
+
+            {metadata?.error?.message ? <Notice variant="error">{metadata.error.message}</Notice> : null}
+
             {actionEntries.length > 0 ? (
               <div style={stackStyle}>
                 {actionEntries.map((action, index) => (
@@ -378,15 +376,35 @@ function BlinkClientSection({ actionParam }: Readonly<{ actionParam: string }>) 
                   />
                 ))}
               </div>
-            ) : (
-              <p style={mutedTextStyle}>This Action did not expose any linked actions.</p>
-            )}
-          </InfoCard>
-        </>
-      ) : null}
+            ) : !loading ? (
+              <p style={tweetCardMutedStyle}>This Action did not expose any linked actions.</p>
+            ) : null}
+          </div>
 
-      {requestError && !loading ? <Notice variant="error">{requestError}</Notice> : null}
-      {executionMessage ? <Notice>{executionMessage}</Notice> : null}
+          <div style={tweetFooterStyle}>
+            <span>9:41 PM</span>
+            <span>via Blinkfy Client</span>
+          </div>
+        </div>
+
+        <div style={tweetSidebarStyle}>
+          <InfoCard title="Action Context">
+            <div style={stackStyle}>
+              <LinkRow label="Decoded Action URL" href={actionUrl || undefined} value={actionUrl || "Unavailable"} />
+              <LinkRow label="Raw solana-action URI" value={blinkHref || actionParam} />
+            </div>
+          </InfoCard>
+
+          {loading ? <InfoCard title="Status"><p style={mutedTextStyle}>Loading Action metadata...</p></InfoCard> : null}
+          {parseError && !loading ? (
+            <Notice variant="error">
+              <strong>Unable to render this Blink.</strong> {parseError}
+            </Notice>
+          ) : null}
+          {requestError && !loading ? <Notice variant="error">{requestError}</Notice> : null}
+          {executionMessage ? <Notice>{executionMessage}</Notice> : null}
+        </div>
+      </div>
     </>
   );
 }
@@ -408,15 +426,15 @@ function LinkedActionCard({
       style={{
         display: "grid",
         gap: "14px",
-        padding: "16px",
-        borderRadius: "18px",
-        background: "rgba(255, 255, 255, 0.78)",
-        border: "1px solid var(--border)",
+        padding: "18px",
+        borderRadius: "20px",
+        background: "#ffffff",
+        border: "1px solid #e5e7eb",
       }}
     >
       <div>
-        <p style={{ margin: 0, fontWeight: 700 }}>{action.label}</p>
-        <p style={{ margin: "6px 0 0", color: "var(--muted)", fontSize: "0.95rem" }}>
+        <p style={{ margin: 0, fontWeight: 700, fontFamily: tweetFontFamily }}>{action.label}</p>
+        <p style={{ margin: "6px 0 0", color: "#536471", fontSize: "0.95rem", fontFamily: tweetFontFamily }}>
           Type: {action.type ?? "post"} | Path: <code>{action.href}</code>
         </p>
       </div>
@@ -443,7 +461,12 @@ function LinkedActionCard({
         </div>
       ) : null}
 
-      <button type="button" style={primaryButtonStyle} disabled={executing} onClick={() => void onExecute(action, values)}>
+      <button
+        type="button"
+        style={tweetActionButtonStyle}
+        disabled={executing}
+        onClick={() => void onExecute(action, values)}
+      >
         {executing ? "Executing..." : action.label}
       </button>
     </div>
@@ -504,7 +527,13 @@ function Header({
   );
 }
 
-function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
+function PageShell({
+  children,
+  wide = false,
+}: Readonly<{
+  children: React.ReactNode;
+  wide?: boolean;
+}>) {
   return (
     <main
       style={{
@@ -514,7 +543,7 @@ function PageShell({ children }: Readonly<{ children: React.ReactNode }>) {
         padding: "24px",
       }}
     >
-      <section style={panelStyle}>{children}</section>
+      <section style={wide ? widePanelStyle : panelStyle}>{children}</section>
     </main>
   );
 }
@@ -623,6 +652,11 @@ const panelStyle: React.CSSProperties = {
   backdropFilter: "blur(12px)",
 };
 
+const widePanelStyle: React.CSSProperties = {
+  ...panelStyle,
+  width: "min(100%, 1120px)",
+};
+
 const stackStyle: React.CSSProperties = {
   display: "grid",
   gap: "18px",
@@ -678,6 +712,157 @@ const primaryButtonStyle: React.CSSProperties = {
   fontSize: "1rem",
   fontWeight: 700,
   padding: "14px 18px",
+  cursor: "pointer",
+};
+
+const tweetFontFamily =
+  'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+const tweetShellStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "24px",
+};
+
+const tweetFrameStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "18px",
+  padding: "24px",
+  borderRadius: "26px",
+  background: "#ffffff",
+  border: "1px solid #dbe1e8",
+  boxShadow: "0 18px 48px rgba(15, 23, 42, 0.08)",
+  fontFamily: tweetFontFamily,
+};
+
+const tweetHeaderRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+  flexWrap: "wrap",
+};
+
+const tweetAvatarStyle: React.CSSProperties = {
+  width: "48px",
+  height: "48px",
+  borderRadius: "999px",
+  display: "grid",
+  placeItems: "center",
+  background: "#111827",
+  color: "#ffffff",
+  fontWeight: 800,
+};
+
+const tweetIdentityRowStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flexWrap: "wrap",
+};
+
+const tweetDisplayNameStyle: React.CSSProperties = {
+  fontWeight: 800,
+  color: "#0f1419",
+};
+
+const tweetHandleStyle: React.CSSProperties = {
+  color: "#536471",
+  fontSize: "0.95rem",
+};
+
+const tweetMetaStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#536471",
+  fontSize: "0.92rem",
+};
+
+const tweetBodyStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#0f1419",
+  fontSize: "1.08rem",
+  lineHeight: 1.6,
+};
+
+const tweetCardStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "16px",
+  padding: "20px",
+  borderRadius: "22px",
+  border: "1px solid #dbe1e8",
+  background: "#f8fafc",
+};
+
+const tweetCardHeaderStyle: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "14px",
+};
+
+const tweetCardIconStyle: React.CSSProperties = {
+  width: "68px",
+  height: "68px",
+  borderRadius: "16px",
+  objectFit: "cover",
+  border: "1px solid #dbe1e8",
+};
+
+const tweetCardIconFallbackStyle: React.CSSProperties = {
+  ...tweetCardIconStyle,
+  display: "grid",
+  placeItems: "center",
+  background: "#111827",
+  color: "#ffffff",
+  fontWeight: 800,
+};
+
+const tweetCardEyebrowStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#1d9bf0",
+  fontSize: "0.8rem",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const tweetCardTitleStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#0f1419",
+  fontWeight: 800,
+  fontSize: "1.2rem",
+};
+
+const tweetCardDescriptionStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#536471",
+  lineHeight: 1.7,
+};
+
+const tweetCardMutedStyle: React.CSSProperties = {
+  margin: 0,
+  color: "#536471",
+};
+
+const tweetFooterStyle: React.CSSProperties = {
+  display: "flex",
+  gap: "12px",
+  flexWrap: "wrap",
+  color: "#536471",
+  fontSize: "0.92rem",
+};
+
+const tweetSidebarStyle: React.CSSProperties = {
+  display: "grid",
+  gap: "16px",
+};
+
+const tweetActionButtonStyle: React.CSSProperties = {
+  border: "none",
+  borderRadius: "999px",
+  background: "#111827",
+  color: "#ffffff",
+  fontSize: "0.98rem",
+  fontWeight: 700,
+  fontFamily: tweetFontFamily,
+  padding: "12px 18px",
   cursor: "pointer",
 };
 

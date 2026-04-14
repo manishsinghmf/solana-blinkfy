@@ -5,12 +5,16 @@ import {
   buildInterstitialHref,
   buildPresetActionUrl,
 } from "../../lib/blink";
-import { getPublicApiUrl, getPublicWebUrl } from "../../lib/config";
+import { getPublicApiUrl, getPublicWebUrl, getPublicXHandle } from "../../lib/config";
 
 const PAGE_PATH = "/donate";
 const DONATION_AMOUNT = "0.1";
 const API_URL = getPublicApiUrl();
 const WEB_URL = getPublicWebUrl();
+const X_HANDLE = getPublicXHandle();
+const PAGE_URL = new URL(PAGE_PATH, WEB_URL).toString();
+const OG_IMAGE_URL = new URL("/donate/opengraph-image", WEB_URL).toString();
+const TWITTER_IMAGE_URL = new URL("/donate/twitter-image", WEB_URL).toString();
 const ACTION_URL = buildPresetActionUrl(API_URL, {
   key: "donate-0-1",
   title: "Donate 0.1 SOL",
@@ -24,19 +28,23 @@ const INTERSTITIAL_URL = buildInterstitialHref(WEB_URL, BLINK_HREF);
 
 export const metadata: Metadata = {
   title: "Support Blinkfy with 0.1 SOL",
-  description: "Open Blinkfy's donation page to review the Solana Action and send a 0.1 SOL donation.",
+  description: "Preview Blinkfy's 0.1 SOL donation page, then open the Solana Action flow to send support.",
   alternates: {
-    canonical: PAGE_PATH,
+    canonical: PAGE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
   openGraph: {
     title: "Support Blinkfy with 0.1 SOL",
-    description: "Review the donation details and open Blinkfy's Solana Action flow.",
-    url: PAGE_PATH,
+    description: "Preview Blinkfy's 0.1 SOL donation page, then open the Solana Action flow to send support.",
+    url: PAGE_URL,
     siteName: "Blinkfy",
     type: "website",
     images: [
       {
-        url: "/donate/opengraph-image",
+        url: OG_IMAGE_URL,
         width: 1200,
         height: 630,
         alt: "Blinkfy donation page preview",
@@ -46,8 +54,16 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Support Blinkfy with 0.1 SOL",
-    description: "Review the donation details and open Blinkfy's Solana Action flow.",
-    images: ["/donate/opengraph-image"],
+    description: "Preview Blinkfy's 0.1 SOL donation page, then open the Solana Action flow to send support.",
+    images: [TWITTER_IMAGE_URL],
+    creator: X_HANDLE,
+    site: X_HANDLE,
+  },
+  category: "technology",
+  other: {
+    "twitter:url": PAGE_URL,
+    "twitter:image:alt": "Blinkfy donation page preview",
+    "og:image:secure_url": OG_IMAGE_URL,
   },
 };
 
@@ -83,7 +99,7 @@ export default function DonatePage() {
       <section style={detailsGridStyle}>
         <article style={detailCardStyle}>
           <h2 style={sectionTitleStyle}>Share URL</h2>
-          <p style={monoTextStyle}>{`${WEB_URL}${PAGE_PATH}`}</p>
+          <p style={monoTextStyle}>{PAGE_URL}</p>
         </article>
 
         <article style={detailCardStyle}>
