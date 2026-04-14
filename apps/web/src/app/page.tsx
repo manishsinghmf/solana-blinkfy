@@ -124,8 +124,8 @@ function GeneratorSection() {
   return (
     <>
       <Header
-        eyebrow="Solana Blink PoC"
-        title="Generate a Blinkfy interstitial for devnet SOL transfer"
+        eyebrow="Solana Blinks"
+        title="Generate Blinks"
         description="Enter a recipient and amount. Blinkfy will generate a raw Action URL, a raw solana-action URI, and a Blinkfy interstitial URL that can render the Action inside the website."
       />
 
@@ -158,7 +158,7 @@ function GeneratorSection() {
         </label>
 
         <button type="submit" style={primaryButtonStyle}>
-          Generate Blinkfy Launch URLs
+          Generate Blink URLs
         </button>
       </form>
 
@@ -167,7 +167,7 @@ function GeneratorSection() {
           <div style={stackStyle}>
             <p style={{ margin: 0, fontWeight: 700 }}>{generatedLinks.title}</p>
             <LinkRow
-              label="Blinkfy interstitial URL"
+              label="Blink URL"
               href={generatedLinks.interstitialUrl}
               value={generatedLinks.interstitialUrl}
               externalLabel="Open Blinkfy client"
@@ -472,7 +472,7 @@ async function fetchActionJson<T>(input: RequestInfo | URL, init?: RequestInit):
     const preview = rawBody.slice(0, 160).trim();
     throw new Error(
       `Expected JSON from the Action endpoint, but received ${contentType || "non-JSON content"} instead. ` +
-        `This usually means the route is not deployed or returned an HTML error page. Preview: ${preview}`,
+      `This usually means the route is not deployed or returned an HTML error page. Preview: ${preview}`,
     );
   }
 

@@ -3,9 +3,10 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import "./globals.css";
 
 import { AppWalletProvider } from "../components/wallet-provider";
-import { getPublicRpcUrl } from "../lib/config";
+import { getPublicRpcUrl, getPublicWebUrl } from "../lib/config";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getPublicWebUrl()),
   title: "Blinkfy",
   description: "Blink generator and Blink-aware client for Solana Actions.",
 };
